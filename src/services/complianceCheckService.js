@@ -85,9 +85,9 @@ function calculateHoursDifferenceBetween2Shifts(currentShiftTimeIn, lastShiftTim
         return 0;
     }
 
-    // if(fileNumber == "000546"){
-    //     console.log(`current shift ka timeIn = ${lastShiftTimeOut} lastprocessedShift ka timeOut = ${currentShiftTimeIn}, differ_hours = ${(currentShiftTimeIn-lastShiftTimeOut) / (60*60 * 1000)}`);
-    // }
+    if(fileNumber == "000546"){
+        console.log(`current shift ka timeIn = ${lastShiftTimeOut} lastprocessedShift ka timeOut = ${currentShiftTimeIn}, differ_hours = ${(currentShiftTimeIn-lastShiftTimeOut) / (60*60 * 1000)}`);
+    }
     return (currentShiftTimeIn - lastShiftTimeOut) / (60*60 * 1000);
 }
 
@@ -152,8 +152,24 @@ function formatComplianceData(data) {
     return formattedData;
 }
 
+const calculateSevenDaysAgo = (timeIn) => {
+    const currentShiftDate = new Date(timeIn);
+
+    // Create a new date object for seven days ago
+    const sevenDaysAgo = new Date(currentShiftDate);
+
+    // Subtract 6 days to get seven days ago
+    sevenDaysAgo.setUTCDate(currentShiftDate.getUTCDate() - 6);
+
+    // Set the time to 00:01:00 UTC
+    sevenDaysAgo.setUTCHours(0, 1, 0, 0); // UTC Hours: 0, Minutes: 1, Seconds: 0, Milliseconds: 0
+
+    return sevenDaysAgo;
+};
+
+  
+
 function calculateLast7DaysHours(shiftData, fileNumber) {
-    const QUEUE_SIZE = 7;
     const processedShifts = [];
 
     // Ensure input is sorted by timeIn
@@ -165,15 +181,15 @@ function calculateLast7DaysHours(shiftData, fileNumber) {
 
     sortedShifts.forEach((currentShift, index) => {
         // Calculate the time 7 days ago from current shift's timeIn
-        const sevenDaysAgo = new Date(new Date(currentShift.timeIn).getTime() - 7 * 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = calculateSevenDaysAgo(currentShift.timeIn);
 
+        if(fileNumber == "000599" && sevenDaysQueue.length > 0){
+            console.log(fileNumber);
+            console.log(`sevenDaysAgo timeOut = ${sevenDaysQueue[0].timeOut},sevenDaysAgo timeIn : ${sevenDaysAgo}, current timeIn : ${currentShift.timeIn}`);
+        }
         // Remove shifts from the queue that are older than 7 days
         while (sevenDaysQueue.length > 0 && 
                new Date(sevenDaysQueue[0].timeOut) < sevenDaysAgo) {
-               if(fileNumber == "000541"){
-                console.log(fileNumber);
-                console.log(`sevenDaysAgo timeOut = ${sevenDaysQueue[0].timeOut},sevenDaysAgo timeIn : ${sevenDaysAgo}, current timeIn : ${currentShift.timeIn}`);
-               }
             // Subtract the duration of the shift being removed
             totalHours7Days -= sevenDaysQueue.shift().duration;
         }
