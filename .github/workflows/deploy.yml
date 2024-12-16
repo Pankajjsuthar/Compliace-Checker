@@ -1,42 +1,44 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Compliance Check CI/CD
+name: Deploy to AWS Lambda
 
 on:
   push:
     branches:
-      - main # Trigger the workflow when changes are pushed to the main branch
+      - main
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      # Step 1: Checkout the code from the GitHub repository
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Install Node.js to build the project
+      # Step 2: Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Step 3: Install production dependencies
+      # Step 3: Install dependencies
       - name: Install dependencies
-        run: npm install
+        run: npm install 
 
       # Step 4: Zip the project
       - name: Package the application
         run: zip -r deployment-package.zip *
 
-      # Step 5: Deploy to AWS Lambda
-      - name: Deploy to Lambda
-        uses: aws-actions/aws-lambda-deploy@v1
+      # Step 5: Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          function-name: MyNodeApp
-          zip-file: deployment-package.zip
+
+      # Step 6: Deploy to AWS Lambda using AWS CLI
+      - name: Deploy to AWS Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name Compliance_Check \
+            --zip-file fileb://deployment-package.zip
